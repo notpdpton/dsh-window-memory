@@ -79,7 +79,11 @@ check(
   mounted.length === 1 && mounted[0] === 'dsh-window-memory',
   mounted.join(', '),
 )
-check('the row mounts no other package', !mounted.some((name) => name.startsWith('dsh-notpdpton')), mounted.join(', '))
+check(
+  'the row mounts this package and nothing else',
+  mounted.length === 1 && mounted.every((name) => name === manifest.name),
+  mounted.join(', '),
+)
 check('the patch is shipped in files[]', Array.isArray(manifest.files) && manifest.files.includes('cordis.patch.yml'), JSON.stringify(manifest.files))
 
 // ===========================================================================
@@ -194,13 +198,20 @@ check(
   !/\bgetSwitches\b/.test(client) && !/\bswitchReader\b/.test(client),
 )
 check('it exposes its documented test seams', client.includes('windowPlacement: {') && client.includes('stores: {'))
+// No fallbacks, by design: this package has never written geometry under another
+// name, so a fallback could only be a dead read dressed up as a compatibility
+// promise. Assert their absence rather than their presence.
+for (const retired of ['dsh-notpdpton', "'dsh-window:window-state'", "'dsh-window:window-restored'"]) {
+  check(
+    'the browser half carries no retired storage key ' + JSON.stringify(retired),
+    !client.includes(retired),
+    'client.js still references ' + retired,
+  )
+}
 check(
-  'the previous geometry key is still read as a fallback',
-  client.includes("'dsh-window:window-state'"),
-)
-check(
-  'the oldest geometry key is only a last resort',
-  client.includes("'dsh-notpdpton:window-state'"),
+  'the browser half names exactly one geometry key',
+  (client.match(/WINDOW_STATE_KEY = '/g) ?? []).length === 1 &&
+    client.includes("'dsh-window-memory:window-state'"),
 )
 
 // ===========================================================================

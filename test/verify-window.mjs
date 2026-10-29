@@ -29,7 +29,7 @@
  *   3. OFF-SCREEN       x=20000 / y=-5000 are rejected, not applied; a partly
  *                       visible rect is pulled fully on screen; isFullyOnScreen
  *                       separates "contained" from "merely touching".
- *   4. RESTORE-ONCE     the guard is sessionStorage["dsh-window:window-restored"]
+ *   4. RESTORE-ONCE     the guard is sessionStorage["dsh-window-memory:window-restored"]
  *                       = "1": a reload does not re-apply, a relaunch does; a
  *                       throwing sessionStorage yields false without crashing.
  *   5. SECANT PLACEMENT placeWindow over a constant frame offset (slope 1) lands on
@@ -467,15 +467,20 @@ await section('seam and documented limits', () => {
   for (const name of names) check('seam exposes windowPlacement.' + name, typeof seam?.[name] === 'function', typeof seam?.[name])
   check('store key is this package\'s own localStorage key', seam?.WINDOW_STATE_KEY === 'dsh-window-memory:window-state', seam?.WINDOW_STATE_KEY)
   check('restore-once key is this package\'s own sessionStorage key', seam?.WINDOW_RESTORED_KEY === 'dsh-window-memory:window-restored', seam?.WINDOW_RESTORED_KEY)
+  // Exactly two keys, both namespaced to this package. A third key would mean a
+  // compatibility promise the plugin does not make — this package has never stored
+  // geometry under any other name.
   check(
-    'the previous geometry key is still read as a fallback',
-    plugin.stores?.LEGACY_WINDOW_STATE_KEY === 'dsh-window:window-state',
-    plugin.stores?.LEGACY_WINDOW_STATE_KEY,
+    'the store seam exposes exactly two keys',
+    JSON.stringify(Object.keys(plugin.stores ?? {}).sort()) === JSON.stringify(['WINDOW_RESTORED_KEY', 'WINDOW_STATE_KEY']),
+    JSON.stringify(Object.keys(plugin.stores ?? {})),
   )
   check(
-    'the oldest geometry key is read only as a last resort',
-    plugin.stores?.ANCIENT_WINDOW_STATE_KEY === 'dsh-notpdpton:window-state',
-    plugin.stores?.ANCIENT_WINDOW_STATE_KEY,
+    'both store keys carry the package namespace',
+    [plugin.stores?.WINDOW_STATE_KEY, plugin.stores?.WINDOW_RESTORED_KEY].every(
+      (key) => typeof key === 'string' && key.startsWith('dsh-window-memory:'),
+    ),
+    JSON.stringify(plugin.stores),
   )
   check('stored document version is 1', seam?.WINDOW_STATE_VERSION === 1, String(seam?.WINDOW_STATE_VERSION))
   check('DSH native minimum width is 520', seam?.WINDOW_MIN_WIDTH === 520, String(seam?.WINDOW_MIN_WIDTH))
@@ -1683,68 +1688,67 @@ await section('9. desktop shell only', async () => {
 })
 
 // ===========================================================================
-// 10. LEGACY STORE
+// 10. ONE STORE KEY
 //
-//   An older installation filed the geometry under a different key. That
-//   document is the placement the user chose, so it must still be read: without
-//   the fallback one launch would open at the shell default and overwrite the old
-//   document with that default. The fallback is read-only — the first write goes
-//   to this package's own key.
+//   This package has never stored geometry under any other name, so there is
+//   nothing to migrate and no fallback to exercise. What matters instead is that
+//   the storage surface stays exactly two namespaced keys: a stray third key would
+//   be a compatibility promise nobody intends to keep, and a read from an
+//   unrelated key would silently restore somebody else's placement.
 // ===========================================================================
-await section('10. fallback geometry keys', () => {
+await section('10. the storage surface is exactly two keys', () => {
   const local = makeStorage()
   const stores = plugin.stores
   check("the store seam exposes this package's geometry key", stores?.WINDOW_STATE_KEY === 'dsh-window-memory:window-state', stores?.WINDOW_STATE_KEY)
-  check('the store seam exposes the previous key', stores?.LEGACY_WINDOW_STATE_KEY === 'dsh-window:window-state', stores?.LEGACY_WINDOW_STATE_KEY)
-  check('the store seam exposes the oldest key', stores?.ANCIENT_WINDOW_STATE_KEY === 'dsh-notpdpton:window-state', stores?.ANCIENT_WINDOW_STATE_KEY)
+  check(
+    'the store seam exposes the restore flag key',
+    stores?.WINDOW_RESTORED_KEY === 'dsh-window-memory:window-restored',
+    stores?.WINDOW_RESTORED_KEY,
+  )
+  check(
+    'no third storage key exists',
+    Object.keys(stores ?? {}).length === 2,
+    JSON.stringify(Object.keys(stores ?? {})),
+  )
 
-  const legacyRect = { left: 240, top: 160, width: 1180, height: 760 }
-  const legacyDoc = JSON.stringify({ v: 1, rect: legacyRect, dpr: 1, maximized: false, updatedAt: 11 })
   check('with nothing stored, loadState is null', call('loadState', local) === null)
 
-  // Oldest key alone, then previous key added on top: the previous one must win.
-  local.setItem(stores.ANCIENT_WINDOW_STATE_KEY, legacyDoc)
-  const fromAncient = call('loadState', local)
+  // Behavioural, not textual: seed a plausible-looking retired key and prove the
+  // read ignores it. Asserting the constant list alone would miss a hard-coded
+  // fallback written inline inside loadState.
+  const probe = JSON.stringify({ v: 1, rect: { left: 777, top: 777, width: 800, height: 640 }, dpr: 1, maximized: false, updatedAt: 9 })
+  for (const retired of ['dsh-window:window-state', 'dsh-notpdpton:window-state', 'dsh-window:window-restored']) {
+    local.setItem(retired, probe)
+  }
   check(
-    'a geometry document under the oldest key is still restored',
-    fromAncient !== null && sameRect(fromAncient.rect, legacyRect),
-    rectText(fromAncient?.rect),
+    'loadState ignores every retired key',
+    call('loadState', local) === null,
+    JSON.stringify(call('loadState', local)),
   )
+  for (const retired of ['dsh-window:window-state', 'dsh-notpdpton:window-state', 'dsh-window:window-restored']) {
+    local.removeItem(retired)
+  }
 
-  const prevRect = { left: 200, top: 120, width: 1024, height: 720 }
-  local.setItem(
-    stores.LEGACY_WINDOW_STATE_KEY,
-    JSON.stringify({ v: 1, rect: prevRect, dpr: 1, maximized: false, updatedAt: 11.5 }),
-  )
-  const fromPrevious = call('loadState', local)
-  check(
-    'the previous key wins over the oldest one',
-    fromPrevious !== null && sameRect(fromPrevious.rect, prevRect),
-    rectText(fromPrevious?.rect),
-  )
+  // A document under an unrelated key must be invisible: the read is by exact key.
+  local.setItem('dsh-window-memory:unrelated', JSON.stringify({ v: 1, rect: { left: 1, top: 1, width: 600, height: 600 } }))
+  check('an unrelated key is not read', call('loadState', local) === null)
 
   const ownRect = { left: 40, top: 30, width: 900, height: 700 }
   local.setItem(stores.WINDOW_STATE_KEY, JSON.stringify({ v: 1, rect: ownRect, dpr: 1, maximized: false, updatedAt: 12 }))
   const fromOwn = call('loadState', local)
   check(
-    "the package's own document wins over the superseded one",
+    'the stored document is read back',
     fromOwn !== null && sameRect(fromOwn.rect, ownRect),
     rectText(fromOwn?.rect),
   )
 
-  // Save always writes THIS package's key, never the superseded one.
   const writes = local.__writes.length
   call('saveState', { rect: ownRect, dpr: 1, maximized: false, updatedAt: 13 }, local)
   const written = local.__writes.slice(writes)
   check("saving writes only this package's geometry key", written.length === 1 && written[0][0] === stores.WINDOW_STATE_KEY, JSON.stringify(written.map((w) => w[0])))
-  // Scope this to the writes SAVE made: the fixture above deliberately seeded the
-  // legacy key by hand, and counting that write would fail on the fixture, not the code.
   check(
-    'saving never writes either fallback key',
-    written.every(
-      (write) =>
-        write[0] !== stores.LEGACY_WINDOW_STATE_KEY && write[0] !== stores.ANCIENT_WINDOW_STATE_KEY,
-    ),
+    'saving touches no other key',
+    written.every((write) => write[0] === stores.WINDOW_STATE_KEY),
     JSON.stringify(written.map((w) => w[0])),
   )
 })

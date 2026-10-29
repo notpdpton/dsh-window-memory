@@ -171,18 +171,14 @@ window has stopped following the request, and the loop stops (reporting
 * A wrong `v`, invalid JSON, or an unusable rect is discarded rather than repaired:
   a wrong guess moves the user's window, which is worse than the default geometry.
 * `sessionStorage["dsh-window-memory:window-restored"] = "1"` marks the launch handled.
-* Two **previous** keys are still READ, and never written: the one this plugin wrote
-  before it was renamed, and the one the feature used before it became its own package.
-  Both may hold the placement a user chose; ignoring them would open one launch at the
-  shell's default geometry and then overwrite that placement with the default. The rule
-  is "own document first, then newest previous, then oldest", so each fallback retires
-  itself on the first write. Their literal names live only in the source and in
-  `test/verify-window.mjs` section 10 — they are an upgrade detail, not part of the
-  documented storage contract, and naming them here would keep retired identifiers in
-  circulation.
-* A previous **switch** document is not read at all. It only ever held "remember the
-  geometry", and that decision is now the plugin's enabled state, which the plugin
-  manager owns — a stored `false` must not override an explicit "enabled".
+* Exactly **two** keys exist and both are namespaced to this package. There are no
+  fallbacks: this package has never written geometry under another name, so a fallback
+  could only be a read that never matches, dressed up as a compatibility promise the
+  plugin does not make. `test/verify-window.mjs` section 10 pins both facts — the key
+  count and the exclusion of any unrelated key.
+* No switch document is read either. "Remember the geometry" is now the plugin's
+  enabled state, which the plugin manager owns — a stored `false` must not override an
+  explicit "enabled".
 
 ## Restore rules
 
@@ -281,9 +277,8 @@ policy (`decodeState`/`encodeState`, `clampRect`, `isOnScreen`/`isFullyOnScreen`
 `bringOnScreen`, `sameRect`, `normalizeFrame`/`pickHomeArea`, `isMaximizedRect`,
 `planRestore`, `placeWindow`), the documented limits, and `install()` — the runtime
 binder, which takes no arguments because there is no enable flag to consult.
-`plugin.stores` exposes the three storage keys (`WINDOW_STATE_KEY`,
-`LEGACY_WINDOW_STATE_KEY`, `WINDOW_RESTORED_KEY`), which is how the legacy fallback is
-verified without a browser. `test/verify-window.mjs` loads `client.js` and drives it
+`plugin.stores` exposes the two storage keys (`WINDOW_STATE_KEY`,
+`WINDOW_RESTORED_KEY`), which is how the storage surface is verified without a browser. `test/verify-window.mjs` loads `client.js` and drives it
 offline; `test/verify-plugin.mjs` audits the manifest (row, halves, identity, icon)
 and asserts the ABSENCE of a page, a switch and a preference store;
 `test/verify-engines.mjs` checks that `dsh.engines.dsh` admits the running DSH;

@@ -32,25 +32,6 @@ window.__ModuleLoader__.load({
 
     const WINDOW_STATE_KEY = 'dsh-window-memory:window-state'
     /**
-     * Superseded geometry key, read-only.
-     *
-     * It is not documented anywhere because it is not part of the contract: it
-     * exists only so an installation that stored its geometry under an earlier
-     * key does not lose the placement. Without the fallback one launch would open
-     * at the shell's default geometry and overwrite that placement with it. The
-     * first write always goes to {@link WINDOW_STATE_KEY}, so this key retires
-     * itself.
-     */
-    const LEGACY_WINDOW_STATE_KEY = 'dsh-window:window-state'
-    /**
-     * Oldest geometry key, read-only and last in the fallback chain.
-     *
-     * This feature once shipped inside a different plugin that filed geometry under
-     * its own name. Deliberately undocumented: it is not part of the contract, only
-     * a one-time rescue for a placement saved by that installation.
-     */
-    const ANCIENT_WINDOW_STATE_KEY = 'dsh-notpdpton:window-state'
-    /**
      * sessionStorage key recording that THIS launch already considered a
      * geometry restore. sessionStorage survives a page reload but is cleared by
      * a new app launch, which is exactly the "once per launch" boundary wanted:
@@ -424,28 +405,15 @@ window.__ModuleLoader__.load({
       /**
        * Read the last saved geometry, or null.
        *
-       * Two fallbacks, tried in order, never written:
-       *
-       * 1. {@link LEGACY_WINDOW_STATE_KEY} — the key an earlier release of THIS
-       *    plugin wrote, before the package was renamed;
-       * 2. {@link ANCIENT_WINDOW_STATE_KEY} — the key this feature used in the era
-       *    when it shipped inside another plugin.
-       *
-       * Both matter for the same reason: each may hold the placement the user
-       * actually chose, and ignoring it would open one launch at the shell's
-       * default geometry AND overwrite that document with the default. The first
-       * capture after a restore writes {@link WINDOW_STATE_KEY}, so each fallback
-       * is read at most once.
+       * One key, no fallbacks. There is nothing to migrate from: this package has
+       * never written geometry under any other name, so a fallback could only be a
+       * dead read that suggests a compatibility promise the plugin does not make.
        */
       function loadState(storage) {
         try {
           const target = storage ?? (typeof localStorage === 'undefined' ? undefined : localStorage)
           if (target === undefined || target === null) return null
-          const own = decodeState(target.getItem(WINDOW_STATE_KEY))
-          if (own !== null) return own
-          const previous = decodeState(target.getItem(LEGACY_WINDOW_STATE_KEY))
-          if (previous !== null) return previous
-          return decodeState(target.getItem(ANCIENT_WINDOW_STATE_KEY))
+          return decodeState(target.getItem(WINDOW_STATE_KEY))
         } catch {
           return null
         }
@@ -1032,14 +1000,10 @@ window.__ModuleLoader__.load({
       /**
        * Test seam: the storage keys this half reads and writes.
        *
-       * The two fallback keys are invisible in the UI and would otherwise only be
-       * exercised by a hand-written browser profile, so the verifier needs them as
-       * data.
+       * Exactly two, and both namespaced to this package — no fallbacks to assert.
        */
       stores: {
         WINDOW_STATE_KEY,
-        LEGACY_WINDOW_STATE_KEY,
-        ANCIENT_WINDOW_STATE_KEY,
         WINDOW_RESTORED_KEY,
       },
       /**
