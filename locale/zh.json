@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "窗口记忆",
+    "description": "仅支持 DSH Desktop：记住窗口位置与尺寸，重开时还原。"
+  }
+}

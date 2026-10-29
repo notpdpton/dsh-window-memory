@@ -1,0 +1,7 @@
+# Keep the repository LF-only regardless of the Windows autocrlf setting. The
+# verifiers read client.js and README.md as text, so a CRLF checkout would make
+# the same commit behave differently on a different machine.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

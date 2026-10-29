@@ -1,0 +1,66 @@
+{
+  "name": "dsh-window-memory",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "仅支持 DSH Desktop：记住窗口位置与尺寸，重开时还原。",
+  "icon": "./icon.svg",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "window",
+    "geometry"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/notpdpton/dsh-window-memory.git"
+  },
+  "homepage": "https://github.com/notpdpton/dsh-window-memory#readme",
+  "bugs": {
+    "url": "https://github.com/notpdpton/dsh-window-memory/issues"
+  },
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./index.js": "./index.js",
+    "./package.json": "./package.json",
+    "./client": "./client.js",
+    "./client.js": "./client.js",
+    "./icon": "./icon.svg",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale/*.json",
+    "docs/*.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/verify-plugin.mjs && node test/verify-window.mjs",
+    "test:engines": "node test/verify-engines.mjs 0.2.1-rc.3"
+  },
+  "dependencies": {},
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    },
+    "runtime": {
+      "shell": "desktop"
+    },
+    "engines": {
+      "dsh": ">=0.2.0-rc.1"
+    }
+  }
+}

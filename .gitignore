@@ -1,0 +1,13 @@
+# Node
+node_modules/
+
+# The dsh-ops plugin's own panel/session state, written into whatever directory
+# it is used from. Never part of the package.
+.dsh-ops/
+
+# Local scratch from verifier runs and throwaway measurement pages. None of it is
+# part of the package.
+.preview/
+.parity/
+.measure/
+.shot/

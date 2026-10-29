@@ -1,0 +1,17 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="7.2" y="8.6" width="15.4" height="11.2" rx="2.2" stroke="url(#npd-window-frame)" stroke-width="2.2"/>
+  <path d="M7.2 12.5H22.6" stroke="url(#npd-window-frame)" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="10.4" cy="10.6" r="0.95" fill="#67C7FE"/>
+  <rect x="17.6" y="18.2" width="12.2" height="8.9" rx="2.2" stroke="url(#npd-window-restore)" stroke-width="2.2"/>
+  <path d="M21.2 22.6H26.4M24.4 20.4L26.6 22.6L24.4 24.8" stroke="#67C7FE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="npd-window-frame" x1="7.2" y1="8.6" x2="22.6" y2="19.8" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7AC2FF"/>
+      <stop offset="1" stop-color="#4A65E8"/>
+    </linearGradient>
+    <linearGradient id="npd-window-restore" x1="17.6" y1="18.2" x2="29.8" y2="27.1" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4A65E8"/>
+      <stop offset="1" stop-color="#45D9E7"/>
+    </linearGradient>
+  </defs>
+</svg>

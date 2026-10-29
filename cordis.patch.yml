@@ -1,0 +1,21 @@
+# This package is a STANDALONE plugin: one card on the Plugins page, one row in
+# this patch, one component. There is no settings page: the browser half registers
+# no slot and renders nothing.
+#
+# The row names this PACKAGE ROOT, never a subpath. The browser half is found by
+# taking the row's package root, reading its package.json "dsh.client"
+# declaration, and loading the file that package exports as "./client"; a row
+# naming a subpath never reaches that scan at all (dsh-client-modules requires an
+# exact package specifier there), so the row would mount with no UI.
+- insert:
+    # `name` is the PACKAGE name and must match package.json — it is how the row
+    # resolves its browser half. `id` is only the row's identity inside the patch
+    # tree; it keeps the historical value so an existing profile does not see a
+    # second entry after upgrading.
+    - id: dsh-window
+      name: 'dsh-window-memory'
+
+# The manager's row is this plugin's ONLY control, and one control is enough
+# because it has exactly one meaning: while the row is active the window geometry
+# is remembered; disable it and the browser half never runs at all, so nothing is
+# restored and nothing is captured.
