@@ -1,6 +1,6 @@
 {
   "name": "dsh-window-memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "仅支持 DSH Desktop：记住窗口位置与尺寸，重开时还原。",
   "icon": "./icon.svg",

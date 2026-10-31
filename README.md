@@ -55,65 +55,33 @@ BrowserWindow。渲染进程读到的矩形与真实窗口矩形存在固定内�
 
 ## 安装
 
-要求：**DSH Desktop**（本插件在浏览器里不生效），以及能访问插件来源的网络。
+要求：**DSH Desktop**（本插件在浏览器里不生效）。
 
-### 方式一：在「插件」页安装（推荐）
+### 在「插件」页安装（推荐）
 
 1. 打开 **设置 → 插件**；
 2. 点右上角 **添加插件**；
-3. 选 **安装第三方插件**（说明文字为「支持 npm 包、Git 仓库和本地目录」）；
-4. 在「包名或地址」里填入下面任意一种，然后点 **安装**：
+3. 选 **安装第三方插件**；
+4. 在「包名或地址」里填入 `dsh-window-memory`，点 **安装**；
+5. 装完按提示 **重启 DSH**；
+6. 重启后回到「插件」页，卡片出现在「已安装插件」下，开关默认打开。
+
+也可以直接引用本地源码目录（绝对路径），适合改代码时调试：
 
 | 填法 | 值 |
 | --- | --- |
-| **npm 包名** | `dsh-window-memory` |
-| Git 仓库地址 | `https://github.com/notpdpton/dsh-window-memory` |
-| Git 简写 | `github:notpdpton/dsh-window-memory` |
-| SSH | `git@github.com:notpdpton/dsh-window-memory.git` |
-| 本地目录（绝对路径） | `D:/path/to/dsh-window` |
+| npm 包名 | `dsh-window-memory` |
+| 本地目录 | `D:/path/to/dsh-window-memory` |
 
-五种写法都能被识别（本地目录必须是绝对路径）。**优先用 npm 包名**：它最快，也不经过
-Git 的连通性检查。Git 地址不需要带 `.git` 后缀，也不需要预先构建：本包是纯 JS，
-没有 `prepare` 之类的构建步骤，克隆下来即可加载。
+### 手动配置 profile
 
-5. 装完按提示 **重启 DSH**；
-6. 重启后回到「插件」页，`dsh-window` 的卡片出现在「已安装插件」下，开关默认打开。
-
-> 「安装源」只对 npm 包名生效；Git 地址走单独的连通性检查，与安装源无关。
-> 国内网络下如果 npm 官方源慢，可以改用镜像源（设为 `https://registry.npmmirror.com`）。
-
-#### 如果安装卡住或报「无法连接插件源」
-
-Git 安装前 DSH 会先跑一次连通性检查（`git ls-remote`），默认超时 **5 秒**（可通过
-`githubConnectionTimeoutMs` 调整）。
-若你的网络需要代理才能访问 GitHub，而代理没有覆盖到这一步，检查就会超时，
-界面上表现为「无法连接插件源，请检查网络后重试」。
-
-按顺序排查：
-
-1. **让代理对 DSH 进程生效**。DSH 会把自身的代理设置传给这个子进程，
-   所以先在 **设置 → 插件 → 不二布丁光子 → 网络代理** 里配置好，再重试；
-2. 直接用命令行确认链路本身没问题：
-
-   ```bash
-   git -c credential.helper= ls-remote -- https://github.com/notpdpton/dsh-window-memory HEAD
-   ```
-
-   能在几秒内返回一行 sha 就说明链路可用；一直挂住则是网络问题，与本插件无关；
-3. 仍然超时的话，改用**方式二**（profile 里声明 + 自己执行 `pnpm`），
-   或者填入**本地目录**路径安装——两者都不经过这个连通性检查。
-
-详情日志在 `<profile>/.plugin-manager/logs/github-connection-*/`。
-
-### 方式二：在 profile 里声明（适合固定版本/离线环境）
-
-把包加入 profile 的依赖与 bundle 列表：
+适合固定版本或离线环境。在 profile 的 `package.json` 里声明依赖与 bundle：
 
 ```jsonc
 // <profile>/package.json
 {
   "dependencies": {
-    "dsh-window-memory": "github:notpdpton/dsh-window-memory"
+    "dsh-window-memory": "^0.1.1"
   },
   "dsh": {
     "profile": {
@@ -126,14 +94,8 @@ Git 安装前 DSH 会先跑一次连通性检查（`git ls-remote`），默认�
 }
 ```
 
-本地开发时指向源码目录，改完刷新即可看到变化：
-
-```bash
-pnpm add link:D:/path/to/dsh-window --dir <profile>
-```
-
 `bundles` 里必须写上 `dsh-window-memory`：只加依赖不写 bundle，包会被装进来但不会被加载。
-（走「方式一」时不需要手写——安装完成后 DSH 会自动把带 `dsh.bundle` 的包追加进
+（走「插件」页安装时不需要手写——安装完成后 DSH 会自动把带 `dsh.bundle` 的包追加进
 `bundles`，这一节是给手工改 profile 的人看的。）
 
 ### 验证是否生效
@@ -156,12 +118,14 @@ pnpm add link:D:/path/to/dsh-window --dir <profile>
 本包以 npm 发布，包名 `dsh-window-memory`（公开）。
 
 ```bash
+npm test                # 先确认三个校验全绿
 npm pack --dry-run      # 预演：只列出将要发布的文件，不上传
-git tag -s v0.1.0 -m "v0.1.0"   # 与提交一样用 GPG 签名标签
+git tag -s v0.1.1 -m "v0.1.1"   # 与提交一样用 GPG 签名标签
 npm publish             # 需要已登录 npm，且账号拥有该包
-git push --tags
+git push && git push --tags
 ```
 
+- 版本号必须先改 `package.json` 的 `version`，标签名与它一致；
 - `package.json` 里**不能**有 `"private": true`，否则 npm 直接以 `EPRIVATE` 拒绝；
 - `publishConfig.access = "public"` 已声明，避免误发成受限包；
 - 版本号变化才允许发布：已发布的版本号不能被覆盖，只能发新版本或 `npm deprecate`；

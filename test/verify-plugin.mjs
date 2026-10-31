@@ -301,24 +301,24 @@ for (const retired of ['dsh-notpdpton', 'dsh-window:window-state', 'dsh-window:w
 section('5b. the README explains how to install')
 check('the README has an install chapter', /^## 安装$/m.test(readme))
 check(
-  'it gives the repository URL that the install dialog accepts',
-  readme.includes('https://github.com/notpdpton/dsh-window-memory'),
-  'missing repo URL',
-)
-check(
-  'it gives the npm package name as the fastest path',
-  readme.includes('\`dsh-window-memory\`'),
+  'it gives the npm package name the install dialog accepts',
+  readme.includes('dsh-window-memory'),
   'README does not offer the npm name',
 )
 check('it names the UI path to the install dialog', readme.includes('添加插件') && readme.includes('安装第三方插件'))
 check('it warns that a restart is required', /重启 DSH/.test(readme))
 check('it documents how to verify the plugin is live', readme.includes('验证是否生效'))
 check('it documents how to uninstall', readme.includes('卸载'))
-check(
-  'it explains the 5s Git connectivity check',
-  /连通性检查/.test(readme) && /5 秒/.test(readme),
-  'the check that actually blocks installs is undocumented',
-)
+// The README is user-facing documentation for the plugin, not for this machine.
+// Personal identifiers and any environment-specific proxy recipe do not belong in
+// it: neither is true for a reader who installed the package from npm.
+for (const leaked of ['notpdpton', '代理', 'proxy', 'github.com/']) {
+  check(
+    'the README carries no ' + JSON.stringify(leaked),
+    !readme.toLowerCase().includes(leaked.toLowerCase()),
+    'README still mentions ' + leaked,
+  )
+}
 
 // ===========================================================================
 // 6. THE PAGE IS GONE, AND ITS ABSENCE IS THE FEATURE
